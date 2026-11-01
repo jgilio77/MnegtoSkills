@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cinematic Scroll Storytelling — Example</title>
+<meta name="description" content="A reference page built with Lenis smooth scrolling and GSAP ScrollTrigger: preloader, split-text reveals, a pinned scrubbed scene, a sticky card stack and a footer reveal.">
+<link rel="stylesheet" href="assets/lenis.css">
+<style>
+  :root{
+    --ink:#121311;
+    --paper:#f2eee6;
+    --muted:#6c6862;
+    --accent:#c9643b;
+    --line:rgba(18,19,17,.14);
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{background:var(--paper)}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  img,svg{display:block;max-width:100%}
+  a{color:inherit}
+
+  /* Preloader */
+  .preloader{position:fixed;inset:0;z-index:50;background:var(--ink);color:var(--paper);display:flex;flex-direction:column;justify-content:space-between;padding:clamp(20px,4vw,48px)}
+  .preloader__top{font-family:var(--sans);font-size:12px;letter-spacing:.18em;text-transform:uppercase;opacity:.7}
+  .preloader__title{font-family:var(--serif);font-size:clamp(40px,8vw,112px);line-height:.95;letter-spacing:-.02em}
+  .preloader__bar{height:1px;background:rgba(242,238,230,.2);position:relative;overflow:hidden}
+  .preloader__bar i{position:absolute;inset:0;background:var(--paper);transform-origin:left;transform:scaleX(0)}
+
+  .no-js .preloader{display:none}
+
+  /* Scroll progress */
+  .progress{position:fixed;top:0;left:0;right:0;height:2px;background:var(--accent);transform-origin:left;transform:scaleX(0);z-index:40}
+
+  /* Layout */
+  .wrap{width:min(1200px,calc(100% - 32px));margin-inline:auto}
+  .eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  section{position:relative}
+
+  /* Hero */
+  .hero{min-height:100svh;display:grid;align-items:end;padding:clamp(120px,18vh,200px) 0 clamp(48px,8vh,96px);overflow:hidden}
+  .hero__art{position:absolute;inset:-8% -4% auto;height:90%;z-index:0;pointer-events:none}
+  .hero__content{position:relative;z-index:1}
+  .hero h1{font-family:var(--serif);font-weight:400;font-size:clamp(44px,8.4vw,128px);line-height:.98;letter-spacing:-.025em;max-width:13ch;margin-top:20px}
+
+  /* Split words: masked overflow so words rise from a baseline */
+  .split-word-mask{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.08em;margin-bottom:-.08em}
+  .split-word{display:inline-block;will-change:transform,opacity,filter}
+
+  /* Intro kinetic paragraph */
+  .intro{padding:clamp(96px,16vh,200px) 0}
+  .intro p{font-family:var(--serif);font-size:clamp(30px,4.6vw,64px);line-height:1.16;letter-spacing:-.01em;max-width:24ch}
+  .intro p em{color:var(--accent);font-style:normal}
+
+  /* Story blocks */
+  .story{padding:clamp(72px,12vh,140px) 0;border-top:1px solid var(--line)}
+  .story__grid{display:grid;gap:clamp(32px,5vw,72px);grid-template-columns:1fr}
+  .story h2{font-family:var(--serif);font-weight:400;font-size:clamp(32px,4vw,56px);line-height:1.05;letter-spacing:-.015em;max-width:18ch}
+  .story__cols{display:grid;gap:24px;grid-template-columns:1fr}
+  .story__cols div{border-top:1px solid var(--line);padding-top:16px}
+  .story__cols h3{font-size:15px;font-weight:600;margin-bottom:8px}
+  .story__cols p{color:var(--muted);font-size:16px;line-height:1.6}
+
+  /* Pinned scrubbed scene (desktop) */
+  .pin-scene{min-height:100svh;display:grid;align-items:center;background:var(--ink);color:var(--paper);overflow:hidden}
+  .pin-scene__wrap{display:grid;gap:clamp(32px,5vw,80px);grid-template-columns:1fr;align-items:center;width:min(1200px,calc(100% - 32px));margin-inline:auto;padding:clamp(64px,10vh,120px) 0}
+  .pin-scene__media{aspect-ratio:4/5;border-radius:4px;overflow:hidden;position:relative;transform-origin:center}
+  .pin-scene__media svg{width:100%;height:100%}
+  .pin-scene__copy{display:grid;gap:clamp(20px,3vh,36px)}
+  .pin-scene__copy p{font-family:var(--serif);font-size:clamp(28px,3.6vw,54px);line-height:1.12;letter-spacing:-.01em}
+  .pin-scene__copy p span{color:rgba(242,238,230,.5)}
+
+  /* Sticky card stack */
+  .projects{padding:clamp(96px,14vh,160px) 0 clamp(40px,8vh,80px)}
+  .projects__head{margin-bottom:clamp(32px,6vh,64px)}
+  .stack{position:relative;padding-bottom:12vh}
+  .stack__card{position:sticky;top:12vh;height:min(62vh,520px);margin-bottom:6vh;border-radius:6px;padding:clamp(24px,4vw,56px);display:flex;flex-direction:column;justify-content:space-between;transform-origin:center top;will-change:transform,opacity;color:#fff}
+  .stack__card:nth-child(1){background:#1e2a24}
+  .stack__card:nth-child(2){background:#7b3a22}
+  .stack__card:nth-child(3){background:#2b3442}
+  .stack__meta{display:flex;justify-content:space-between;font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+  .stack__card h3{font-family:var(--serif);font-weight:400;font-size:clamp(34px,5vw,72px);line-height:1;letter-spacing:-.02em;max-width:14ch}
+  .stack__card p{max-width:44ch;opacity:.8;line-height:1.6}
+
+  /* Footer */
+  .footer{padding:clamp(120px,22vh,240px) 0 clamp(48px,8vh,96px);border-top:1px solid var(--line);overflow:hidden}
+  .footer h2{font-family:var(--serif);font-weight:400;font-size:clamp(40px,7vw,104px);line-height:.98;letter-spacing:-.025em}
+  .footer__row{margin-top:40px;display:flex;flex-wrap:wrap;gap:16px 32px;justify-content:space-between;color:var(--muted);font-size:14px}
+
+  /* Desktop-only grid layouts */
+  @media (min-width:700px){
+    .story__cols{grid-template-columns:repeat(3,1fr)}
+    .story__grid{grid-template-columns:1.1fr 1fr}
+  }
+  @media (min-width:900px){
+    .pin-scene__wrap{grid-template-columns:1fr 1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="preloader" data-preloader aria-hidden="true">
+  <div class="preloader__top"><span>Scroll Storytelling</span><span>Example</span></div>
+  <div class="preloader__title">Loading the story</div>
+  <div class="preloader__bar"><i data-preloader-bar></i></div>
+</div>
+
+<div class="progress" data-progress aria-hidden="true"></div>
+
+<main>
+
+  <!-- 1. Hero: image parallax + masked headline -->
+  <section class="hero" data-parallax-section>
+    <div class="hero__art" data-parallax-layer data-speed="-0.18" aria-hidden="true">
+      <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <radialGradient id="sun" cx="50%" cy="50%" r="50%">
+            <stop offset="0" stop-color="#c9643b" stop-opacity=".95"/>
+            <stop offset="1" stop-color="#c9643b" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="800" height="600" fill="#e7dfd1"/>
+        <circle cx="520" cy="250" r="260" fill="url(#sun)"/>
+        <g fill="none" stroke="#121311" stroke-opacity=".18">
+          <circle cx="520" cy="250" r="120"/>
+          <circle cx="520" cy="250" r="190"/>
+          <circle cx="520" cy="250" r="260"/>
+          <circle cx="520" cy="250" r="330"/>
+        </g>
+        <path d="M0 470 C 160 410, 300 520, 460 455 S 720 400, 800 430 L800 600 L0 600 Z" fill="#121311" fill-opacity=".9"/>
+      </svg>
+    </div>
+    <div class="wrap hero__content">
+      <p class="eyebrow">Cinematic scroll storytelling</p>
+      <h1 data-split-reveal>Design that unfolds with cinematic restraint.</h1>
+    </div>
+  </section>
+
+  <!-- 2. Intro: word-by-word kinetic typography -->
+  <section class="intro">
+    <div class="wrap">
+      <p data-split-reveal>Every block arrives with quiet intent. <em>Motion follows the reader</em>, never the other way round.</p>
+    </div>
+  </section>
+
+  <!-- 3. Story blocks: section-by-section reveals -->
+  <section class="story" data-story-section>
+    <div class="wrap story__grid">
+      <div>
+        <p class="eyebrow" data-reveal-item>01 — Method</p>
+        <h2 data-reveal-item style="margin-top:16px">Three rules keep the page readable while it moves.</h2>
+      </div>
+      <div class="story__cols">
+        <div data-reveal-item><h3>One focal point</h3><p>Each section leads with a single idea. Everything else steps back.</p></div>
+        <div data-reveal-item><h3>Motion after meaning</h3><p>Animation starts once the text is understood, never before.</p></div>
+        <div data-reveal-item><h3>Play once</h3><p>Reveals animate a single time so the page stays calm on the second pass.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Pinned scene: scroll-scrubbed progression (desktop); stacked on mobile -->
+  <section class="pin-scene" data-pin-scene>
+    <div class="pin-scene__wrap">
+      <div class="pin-scene__media" data-pin-media aria-hidden="true">
+        <svg viewBox="0 0 400 500" preserveAspectRatio="xMidYMid slice">
+          <rect width="400" height="500" fill="#2b3442"/>
+          <g fill="none" stroke="#f2eee6" stroke-opacity=".35">
+            <circle cx="200" cy="250" r="80"/><circle cx="200" cy="250" r="140"/><circle cx="200" cy="250" r="200"/>
+          </g>
+          <circle cx="200" cy="250" r="46" fill="#c9643b"/>
+        </svg>
+      </div>
+      <div class="pin-scene__copy">
+        <p data-pin-line>Scroll sets the pace.</p>
+        <p data-pin-line><span>Nothing moves on its own.</span></p>
+        <p data-pin-line>Each line earns its place.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Sticky card stack: earlier cards recede as later ones arrive -->
+  <section class="projects" data-sticky-stack>
+    <div class="wrap projects__head">
+      <p class="eyebrow">Selected work</p>
+    </div>
+    <div class="wrap stack">
+      <article class="stack__card" data-stack-card>
+        <div class="stack__meta"><span>01</span><span>Identity system</span></div>
+        <div><h3>A quiet mark for a slow-food brand.</h3><p style="margin-top:20px">Type, colour and a grid built from the product's own proportions.</p></div>
+      </article>
+      <article class="stack__card" data-stack-card>
+        <div class="stack__meta"><span>02</span><span>Product site</span></div>
+        <div><h3>A launch page that explains itself.</h3><p style="margin-top:20px">One demo, one claim, one call to action, paced by scroll.</p></div>
+      </article>
+      <article class="stack__card" data-stack-card>
+        <div class="stack__meta"><span>03</span><span>Editorial book</span></div>
+        <div><h3>Long-form design in print and on screen.</h3><p style="margin-top:20px">Chapters that open with a single full-bleed image.</p></div>
+      </article>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer" data-footer-parallax>
+  <div class="wrap">
+    <h2>Start with the story. Add motion where it helps it land.</h2>
+    <div class="footer__row">
+      <span>Lenis · GSAP ScrollTrigger</span>
+      <span>Reduced-motion and no-JS fallbacks included</span>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/gsap.min.js"></script>
+<script src="assets/ScrollTrigger.min.js"></script>
+<script src="assets/lenis.min.js"></script>
+<script>
+(() => {
+  document.documentElement.classList.remove("no-js");
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  gsap.registerPlugin(ScrollTrigger);
+
+  // Smooth scroll: skipped entirely for reduced-motion users.
+  let lenis = null;
+  if (!reduceMotion) {
+    lenis = new Lenis({ lerp: 0.08, smoothWheel: true, wheelMultiplier: 0.9 });
+    lenis.on("scroll", ScrollTrigger.update);
+    gsap.ticker.add((time) => lenis.raf(time * 1000));
+    gsap.ticker.lagSmoothing(0);
+  }
+
+  // Split text into masked words (skip for reduced motion; text stays as authored).
+  function splitWords(el) {
+    const text = el.textContent;
+    el.setAttribute("aria-label", text.trim());
+    el.textContent = "";
+    text.split(/(\s+)/).forEach((part) => {
+      if (!part.trim()) { el.appendChild(document.createTextNode(part)); return; }
+      const mask = document.createElement("span");
+      const word = document.createElement("span");
+      mask.className = "split-word-mask";
+      word.className = "split-word";
+      word.textContent = part;
+      mask.setAttribute("aria-hidden", "true");
+      mask.appendChild(word);
+      el.appendChild(mask);
+    });
+    return el.querySelectorAll(".split-word");
+  }
+
+  // Preloader: fills, waits for load (capped at 2.5s so a slow asset can't hold it), then lifts away.
+  function preloader() {
+    return new Promise((resolve) => {
+      const loader = document.querySelector("[data-preloader]");
+      if (!loader || reduceMotion) { if (loader) loader.remove(); return resolve(); }
+      const bar = loader.querySelector("[data-preloader-bar]");
+      const fill = gsap.fromTo(bar, { scaleX: 0 }, { scaleX: 1, duration: 1.1, ease: "power3.out" });
+      const loaded = new Promise((r) => window.addEventListener("load", r, { once: true }));
+      const cap = new Promise((r) => setTimeout(r, 2500));
+      Promise.all([fill.then(), Promise.race([loaded, cap])]).then(() => {
+        gsap.to(loader, {
+          yPercent: -100, duration: 0.9, ease: "power4.inOut", delay: 0.15,
+          onComplete: () => { loader.remove(); resolve(); },
+        });
+      });
+    });
+  }
+
+  function init() {
+    if (reduceMotion) return;
+
+    // Hero entrance
+    const heroWords = splitWords(document.querySelector(".hero h1"));
+    gsap.fromTo(
+      heroWords,
+      { yPercent: 110, autoAlpha: 0, filter: "blur(8px)" },
+      { yPercent: 0, autoAlpha: 1, filter: "blur(0px)", duration: 1.05, ease: "power4.out", stagger: 0.06, delay: 0.05 }
+    );
+
+    // Split-text reveals on scroll, play once
+    document.querySelectorAll("[data-split-reveal]").forEach((el) => {
+      if (el.closest(".hero")) return;
+      const words = splitWords(el);
+      gsap.fromTo(
+        words,
+        { yPercent: 110, autoAlpha: 0, filter: "blur(8px)" },
+        {
+          yPercent: 0, autoAlpha: 1, filter: "blur(0px)", duration: 0.95, ease: "power4.out", stagger: 0.05,
+          scrollTrigger: { trigger: el, start: "top 82%", once: true },
+          immediateRender: false,
+        }
+      );
+    });
+
+    // Section reveals, play once
+    document.querySelectorAll("[data-story-section]").forEach((section) => {
+      const items = section.querySelectorAll("[data-reveal-item]");
+      gsap.fromTo(
+        items,
+        { y: 36, autoAlpha: 0, filter: "blur(8px)" },
+        {
+          y: 0, autoAlpha: 1, filter: "blur(0px)", duration: 1, ease: "power4.out", stagger: 0.08,
+          scrollTrigger: { trigger: section, start: "top 82%", once: true },
+          immediateRender: false,
+        }
+      );
+    });
+
+    // Hero parallax
+    document.querySelectorAll("[data-parallax-layer]").forEach((layer) => {
+      const section = layer.closest("[data-parallax-section]") || layer;
+      gsap.to(layer, {
+        y: () => window.innerHeight * Number(layer.dataset.speed || -0.16),
+        ease: "none",
+        scrollTrigger: { trigger: section, start: "top bottom", end: "bottom top", scrub: 1, invalidateOnRefresh: true },
+      });
+    });
+
+    // Scroll progress bar
+    gsap.to("[data-progress]", {
+      scaleX: 1, ease: "none",
+      scrollTrigger: { trigger: document.body, start: "top top", end: "bottom bottom", scrub: 0.3 },
+    });
+
+    // Sticky card stack: each card recedes as the next one arrives
+    document.querySelectorAll("[data-sticky-stack]").forEach((stack) => {
+      const cards = gsap.utils.toArray(stack.querySelectorAll("[data-stack-card]"));
+      cards.forEach((card, i) => {
+        const next = cards[i + 1];
+        if (!next) return;
+        gsap.to(card, {
+          scale: 0.92 + i * 0.015, autoAlpha: 0.72, y: -24, ease: "none",
+          scrollTrigger: { trigger: next, start: "top 78%", end: "top 24%", scrub: true, invalidateOnRefresh: true },
+        });
+      });
+    });
+
+    // Footer reveal
+    gsap.fromTo(
+      "[data-footer-parallax]",
+      { yPercent: -12, autoAlpha: 0.85 },
+      {
+        yPercent: 0, autoAlpha: 1, ease: "none",
+        scrollTrigger: { trigger: "[data-footer-parallax]", start: "top bottom", end: "top 45%", scrub: 1 },
+        immediateRender: false,
+      }
+    );
+
+    // Pinned, scrubbed scene: desktop only. Mobile and reduced motion keep the stacked, static layout.
+    ScrollTrigger.matchMedia({
+      "(min-width: 900px)": function () {
+        const scene = document.querySelector("[data-pin-scene]");
+        const media = scene.querySelector("[data-pin-media]");
+        const lines = scene.querySelectorAll("[data-pin-line]");
+        gsap.timeline({
+          scrollTrigger: { trigger: scene, start: "top top", end: "+=140%", scrub: 1.1, pin: true, anticipatePin: 1, invalidateOnRefresh: true },
+        })
+          .fromTo(media, { scale: 1.08 }, { scale: 1, ease: "none" }, 0)
+          .fromTo(lines, { autoAlpha: 0, y: 40 }, { autoAlpha: 1, y: 0, stagger: 0.15, ease: "none" }, 0.15);
+      },
+    });
+  }
+
+  preloader().then(() => {
+    init();
+    const refresh = () => ScrollTrigger.refresh();
+    window.addEventListener("load", refresh);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(refresh);
+  });
+})();
+</script>
+</body>
+</html>

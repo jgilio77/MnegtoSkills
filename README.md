@@ -45,6 +45,40 @@ The format is intentionally plain Markdown and folder-based.
 - **Claude Code**: reference the relevant skill from `CLAUDE.md`, copy it into a Claude skills setup, or open the `SKILL.md` directly as working context.
 - **Cursor**: point Cursor rules or chat context at the specific skill folder. Keep reusable snippets, constraints, and defaults easy to paste.
 - **Other agents**: use the same contract: read the narrowest matching skill first, then follow its steps and linked references.
+- **Any MCP client**: run the bundled MCP server (below) and let the agent search and load skills on demand.
+
+### MCP server
+
+`mcp/server.mjs` serves the whole library over MCP (stdio). Node 18+, zero dependencies, no build step.
+
+| Tool | Does |
+| --- | --- |
+| `search_skills` | Rank skills against a task ("scroll animation with GSAP") |
+| `list_skills` | Every skill, filterable by `category` or demo `source` (`neuform`, `local`, `no-demo`) |
+| `get_skill` | Full `SKILL.md` + `REFERENCES.md` |
+| `get_demo_prompt` | The demo's `PROMPT.md` (exact recreation + remix prompt) |
+| `get_demo` | Live demo, preview and prompt links, provenance, files; `include_html` for the source |
+| `reload_skills` | Rescan `agent-skills/` after edits |
+
+Each `SKILL.md` is also a resource at `skill://<category>/<slug>`.
+
+**Claude Code** picks it up from `.mcp.json` when you open this repo. From anywhere else:
+
+```bash
+claude mcp add mengto-skills -- node /absolute/path/to/Skills/mcp/server.mjs
+```
+
+**Claude Desktop, Cursor, other clients** — add to the client's MCP config:
+
+```json
+{
+  "mcpServers": {
+    "mengto-skills": { "command": "node", "args": ["/absolute/path/to/Skills/mcp/server.mjs"] }
+  }
+}
+```
+
+Optional env: `SKILLS_REPO_ROOT` (library location), `SKILLS_GITHUB_REPO` and `SKILLS_GITHUB_BRANCH` (used to build demo links). Test with `node scripts/test-mcp-server.mjs`.
 
 ---
 
